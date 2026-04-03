@@ -3,6 +3,22 @@ const router = express.Router();
 
 const User = require("../models/User");
 
+// 🔥 RETAILER ID
+function generateRetailerId() {
+  const now = new Date();
+
+  const month = String(now.getMonth() + 1).padStart(2, "0"); // MM
+  const year  = String(now.getFullYear()).slice(-2);        // YY
+
+  // 🔤 random letter (a-z)
+  const letter = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+
+  // 🔢 5 digit random
+  const random = Math.floor(10000 + Math.random() * 90000);
+
+  return `NS${month}${year}${letter}${random}`;
+}
+
 // 🔥 Register API
 router.post("/register", async (req, res) => {
   try {
@@ -11,21 +27,58 @@ router.post("/register", async (req, res) => {
     if (!mobile || !password) {
       return res.json({
         status: "error",
-        message: "All fields required"
+        message: "Mobile and password required"
       });
     }
 
-    const existingUser = await User.findOne({ mobile });
+    // 🔒 DUPLICATE CHECK
+    const existingUser = await User.findOne({
+      $or: [
+        { mobile: mobile },
+        { email: email },
+        { docNo: docNo }
+      ]
+    });
 
     if (existingUser) {
+
+      let errorMsg = "User already exists";
+
+      if (existingUser.mobile === mobile) {
+        errorMsg = "Mobile number already registered";
+      } else if (existingUser.email === email) {
+        errorMsg = "Email already registered";
+      } else if (existingUser.docNo === docNo) {
+        errorMsg = "Document already registered";
+      }
+
       return res.json({
         status: "error",
-        message: "User already exists"
+        message: errorMsg
       });
     }
 
+// 🔥 GENERATE UNIQUE RETAILER ID
+let retailerId;
+
+while (true) {
+  retailerId = generateRetailerId();
+
+  const exists = await User.findOne({ retailerId });
+  if (!exists) break;
+}
+
     const newUser = new User({
-      name, shop, mobile, email, address, dob, docType, docNo, password
+      name,
+      shop,
+      mobile,
+      email,
+      address,
+      dob,
+      docType,
+      docNo,
+      password,
+      retailerId
     });
 
     await newUser.save();
@@ -36,7 +89,17 @@ router.post("/register", async (req, res) => {
     });
 
   } catch (err) {
-    console.log(err);
+
+    // 🔥 Mongo duplicate error handle (extra safety)
+    if (err.code === 11000) {
+      return res.json({
+        status: "error",
+        message: "Duplicate data detected"
+      });
+    }
+
+    console.log("Register error:", err);
+
     res.json({
       status: "error",
       message: "Server error"
@@ -46,12 +109,12 @@ router.post("/register", async (req, res) => {
 
 // 🔥 Login API
 router.post("/login", async (req, res) => {
-  const { mobile, password } = req.body;
+  const { mobile: identifier, password } = req.body;
 
-  const user = await User.findOne({
-    $or: [{ mobile: mobile }, { email: mobile }],
-    password: password
-  });
+const user = await User.findOne({
+  $or: [{ mobile: identifier }, { email: identifier }],
+  password: password
+});
 
   if (user) {
     res.json({
@@ -232,3 +295,4 @@ await user.save();
     });
   }
 });
+

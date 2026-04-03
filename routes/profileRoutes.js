@@ -3,6 +3,7 @@ const router = express.Router();
 
 const User = require("../models/User");
 
+
 // 🔥 Get Profile
 router.post("/profile", async (req, res) => {
   try {
@@ -31,15 +32,38 @@ router.post("/profile", async (req, res) => {
   }
 });
 
-module.exports = router;
 
-// 🔥 Update Profile
+// 🔥 Update Profile (SAFE VERSION)
 router.post("/profile/update", async (req, res) => {
   try {
-    const { mobile, field, value } = req.body;
+    const { userId, field, value } = req.body;
 
-    const updatedUser = await User.findOneAndUpdate(
-      { mobile: mobile },
+    if (!userId || !field) {
+      return res.json({
+        status: "error",
+        message: "Invalid request"
+      });
+    }
+
+    // 🔒 DUPLICATE CHECK (only for mobile/email)
+    if (field === "mobile" || field === "email") {
+
+      const existingUser = await User.findOne({
+        _id: { $ne: userId },
+        [field]: value
+      });
+
+      if (existingUser) {
+        return res.json({
+          status: "error",
+          message: `${field} already in use`
+        });
+      }
+    }
+
+    // ✅ UPDATE USER
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
       { [field]: value },
       { new: true }
     );
@@ -51,10 +75,14 @@ router.post("/profile/update", async (req, res) => {
     });
 
   } catch (err) {
-    console.log(err);
+    console.log("Profile update error:", err);
+
     res.json({
       status: "error",
       message: "Update failed"
     });
   }
 });
+
+
+module.exports = router;
