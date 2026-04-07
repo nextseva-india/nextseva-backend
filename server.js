@@ -18,6 +18,8 @@ app.use(express.json());
 app.use("/api", require("./routes/authRoutes"));
 app.use("/api", require("./routes/profileRoutes"));
 app.use("/api", require("./routes/serviceRoutes"));
+app.use("/api/wallet", require("./routes/walletRoutes"));
+app.use("/api/transaction", require("./routes/transactionRoutes"));
 
 // 🔥 Test route
 app.get("/", (req, res) => {

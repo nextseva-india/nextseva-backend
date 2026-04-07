@@ -56,7 +56,31 @@ retailerId: {
         default: false
       }
     }
-  ]
+  ],
+
+  transactions: [
+  {
+    id: {
+  type: {
+  type: String,
+  required: true
+},
+  required: true
+},
+    date: {
+  type: Date,
+  default: Date.now
+},
+    status: {
+  type: String,
+  enum: ["credit", "debit"],
+  required: true
+},
+    status: String,
+    amount: Number,
+    balance: Number
+  }
+]
 
 }, { timestamps: true });
 
