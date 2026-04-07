@@ -1,12 +1,13 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  
-retailerId: {
-  type: String,
-  unique: true,
-  required: true
-},
+
+  retailerId: {
+    type: String,
+    required: true,
+    unique: true
+  },
+
   name: String,
   shop: String,
 
@@ -32,7 +33,10 @@ retailerId: {
     sparse: true
   },
 
-  password: String,
+  password: {
+    type: String,
+    required: true
+  },
 
   wallet: {
     type: Number,
@@ -59,28 +63,29 @@ retailerId: {
   ],
 
   transactions: [
-  {
-    id: {
-  type: {
-  type: String,
-  required: true
-},
-  required: true
-},
-    date: {
-  type: Date,
-  default: Date.now
-},
-    status: {
-  type: String,
-  enum: ["credit", "debit"],
-  required: true
-},
-    status: String,
-    amount: Number,
-    balance: Number
-  }
-]
+    {
+      id: {
+        type: String,
+        required: true
+      },
+
+      date: {
+        type: Date,
+        default: Date.now
+      },
+
+      type: {
+        type: String,
+        enum: ["credit", "debit"],
+        required: true
+      },
+
+      status: String,
+
+      amount: Number,
+      balance: Number
+    }
+  ]
 
 }, { timestamps: true });
 
