@@ -76,7 +76,7 @@ const userSchema = new mongoose.Schema({
 
       type: {
         type: String,
-        enum: ["credit", "debit"],
+        enum: ["Wallet Add", "Wallet Withdraw"],
         required: true
       },
 

@@ -1,3 +1,5 @@
+const User = require("../models/User");
+const Transaction = require("../models/Transaction");
 const express = require("express");
 const router = express.Router();
 const Service = require("../models/Service");
@@ -9,6 +11,53 @@ router.get("/services", async (req, res) => {
     res.json({ status: "success", services });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/recharge", async (req, res) => {
+  try {
+
+    const { userId, mobile, operator } = req.body;
+    const type = req.body.type || "Mobile Recharge";
+    const amount = Number(req.body.amount);
+
+    if(!amount || amount <= 0){
+     return res.json({ success: false, message: "Invalid amount" });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if (user.wallet < amount) {
+      return res.json({ success: false, message: "Insufficient balance" });
+    }
+
+    // ✅ wallet deduct
+    user.wallet -= amount;
+    await user.save();
+
+    // ✅ transaction save
+    await Transaction.create({
+  userId,
+  txnId: "NS" + Date.now(),
+  type,
+  amount,
+  mobile,
+  operator,
+  status: "success",
+  date: new Date()
+});
+
+    return res.json({
+  success: true,
+  message: "Recharge successful",
+  balance: user.wallet
+});
+
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false, message: "Server error" });
   }
 });
 

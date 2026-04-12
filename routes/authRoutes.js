@@ -130,7 +130,7 @@ const user = await User.findOne({
   }
 });
 
-module.exports = router;
+
 
 // 🔥 SET MPIN
 router.post("/set-mpin", async (req, res) => {
@@ -171,13 +171,14 @@ res.json({
   user: user
 });
 
-  } catch (err) {
-    console.log(err);
-    res.json({
-      status: "error",
-      message: "Server error"
-    });
   }
+  catch (err) {
+  console.log("MPIN ERROR FULL:", err);
+  res.json({
+    status: "error",
+    message: err.message
+  });
+}
 });
 
 // 🔥 ADD BANK ACCOUNT
@@ -296,3 +297,4 @@ await user.save();
   }
 });
 
+module.exports = router;
