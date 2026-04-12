@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const User = require("../models/User");
+const Transaction = require("../models/Transaction");
 
 // 💰 ADD MONEY
 router.post("/add", async (req, res) => {
@@ -10,12 +11,11 @@ router.post("/add", async (req, res) => {
 
     const amt = Number(amount);
 
-    // 🔥 VALIDATION FIX
     if (!mobile || isNaN(amt) || amt <= 0) {
       return res.json({ status: "fail", message: "Invalid data" });
     }
 
-    // 🔥 ATOMIC UPDATE (NO BUG)
+    // 🔥 UPDATE WALLET
     const user = await User.findOneAndUpdate(
       { mobile },
       { $inc: { wallet: amt } },
@@ -26,16 +26,27 @@ router.post("/add", async (req, res) => {
       return res.json({ status: "fail", message: "User not found" });
     }
 
+    // 🔥 SAVE TRANSACTION
+    await Transaction.create({
+      userId: user._id,
+      txnId: "NS" + Date.now() + Math.floor(Math.random() * 1000),
+      type: "Wallet Add",
+      amount: amt,
+      status: "credit",
+      balance: user.wallet
+    });
+
     res.json({
       status: "success",
       wallet: user.wallet
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("WALLET ADD ERROR:", err);
     res.json({ status: "fail" });
   }
 });
+
 
 // 💸 DEDUCT MONEY
 router.post("/deduct", async (req, res) => {
@@ -44,7 +55,6 @@ router.post("/deduct", async (req, res) => {
 
     const amt = Number(amount);
 
-    // 🔥 VALIDATION FIX
     if (!mobile || isNaN(amt) || amt <= 0) {
       return res.json({ status: "fail", message: "Invalid data" });
     }
@@ -55,17 +65,26 @@ router.post("/deduct", async (req, res) => {
       return res.json({ status: "fail", message: "User not found" });
     }
 
-    // 🔥 BALANCE CHECK
     if (user.wallet < amt) {
       return res.json({ status: "fail", message: "Low balance" });
     }
 
-    // 🔥 ATOMIC UPDATE
+    // 🔥 UPDATE WALLET
     const updated = await User.findOneAndUpdate(
       { mobile },
       { $inc: { wallet: -amt } },
       { new: true }
     );
+
+    // 🔥 SAVE TRANSACTION
+    await Transaction.create({
+      userId: updated._id,
+      txnId: "NS" + Date.now() + Math.floor(Math.random() * 1000),
+      type: "Wallet Withdraw",
+      amount: amt,
+      status: "debit",
+      balance: updated.wallet
+    });
 
     res.json({
       status: "success",
@@ -73,7 +92,7 @@ router.post("/deduct", async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("WALLET DEDUCT ERROR:", err);
     res.json({ status: "fail" });
   }
 });
