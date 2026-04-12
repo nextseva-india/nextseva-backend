@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Transaction = require("../models/Transaction");
 const express = require("express");
 const router = express.Router();
 const Service = require("../models/Service");
@@ -37,24 +38,16 @@ router.post("/recharge", async (req, res) => {
     await user.save();
 
     // ✅ transaction save
-    await User.updateOne(
-  { _id: userId },
-  {
-    $push: {
-      transactions: {
-        $each: [{
-          id: "NS" + Date.now(),
-          type: "Mobile Recharge",
-          status: "debit",
-          amount,
-          balance: user.wallet, // 🔥 ADD THIS
-          date: new Date()
-        }],
-        $slice: -100
-      }
-    }
-  }
-);
+  await Transaction.create({
+  userId,
+  txnId: "NS" + Date.now() + Math.floor(Math.random() * 1000),
+  type,
+  amount,
+  status: "debit",
+  balance: user.wallet,
+  mobile,
+  operator
+});
 
     return res.json({
   success: true,
