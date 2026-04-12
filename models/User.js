@@ -75,10 +75,10 @@ const userSchema = new mongoose.Schema({
       },
 
       type: {
-        type: String,
-        enum: ["Wallet Add", "Wallet Withdraw"],
-        required: true
-      },
+  type: String,
+  enum: ["Wallet Add", "Wallet Withdraw", "Mobile Recharge", "DTH Recharge", "LIC Premium"],
+  required: true
+},
 
       status: String,
 
