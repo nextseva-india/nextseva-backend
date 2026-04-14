@@ -4,9 +4,14 @@ const router = express.Router();
 const User = require("../models/User");
 const Transaction = require("../models/Transaction");
 
+const generateTxnId = require("../utils/generateTxnId");
+console.log(generateTxnId("CR"));
+
+
 // 💰 ADD MONEY
 router.post("/add", async (req, res) => {
   try {
+     console.log("🔥 ADD ROUTE HIT");   // ✅ ADD THIS
     const { mobile, amount } = req.body;
 
     const amt = Number(amount);
@@ -26,15 +31,21 @@ router.post("/add", async (req, res) => {
       return res.json({ status: "fail", message: "User not found" });
     }
 
-    // 🔥 SAVE TRANSACTION
-    await Transaction.create({
-      userId: user._id,
-      txnId: "NS" + Date.now() + Math.floor(Math.random() * 1000),
-      type: "Wallet Add",
-      amount: amt,
-      status: "credit",
-      balance: user.wallet
-    });
+   // 🔥 SAVE TRANSACTION
+
+const txnId = generateTxnId("CR");   // ✅ আগে generate
+
+const tx = await Transaction.create({
+  userId: user._id,
+  txnId,                             // ✅ এখানে বসাও
+  type: "Wallet Add",
+  amount: amt,
+  status: "credit",
+  balance: user.wallet
+});
+
+console.log("✅ TX SAVED:", tx);
+  
 
     res.json({
       status: "success",
@@ -77,9 +88,11 @@ router.post("/deduct", async (req, res) => {
     );
 
     // 🔥 SAVE TRANSACTION
+    const txnId = generateTxnId("DR");
+
     await Transaction.create({
       userId: updated._id,
-      txnId: "NS" + Date.now() + Math.floor(Math.random() * 1000),
+      txnId,
       type: "Wallet Withdraw",
       amount: amt,
       status: "debit",
