@@ -5,7 +5,6 @@ const User = require("../models/User");
 const Transaction = require("../models/Transaction");
 
 const generateTxnId = require("../utils/generateTxnId");
-console.log(generateTxnId("CR"));
 
 
 // 💰 ADD MONEY

@@ -3,6 +3,7 @@ const Transaction = require("../models/Transaction");
 const express = require("express");
 const router = express.Router();
 const Service = require("../models/Service");
+const generateTxnId = require("../utils/generateTxnId");
 
 // GET all services
 router.get("/services", async (req, res) => {
@@ -38,9 +39,10 @@ router.post("/recharge", async (req, res) => {
     await user.save();
 
     // ✅ transaction save
+    const txnId = generateTxnId("RC");
   await Transaction.create({
   userId,
-  txnId: "NS" + Date.now() + Math.floor(Math.random() * 1000),
+  txnId,
   type,
   amount,
   status: "debit",

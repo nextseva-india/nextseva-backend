@@ -40,10 +40,6 @@ const transactionSchema = new mongoose.Schema({
   mobile: String,
   operator: String,
 
-  date: {
-    type: Date,
-    default: Date.now
-  }
 
 }, {
   timestamps: true

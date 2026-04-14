@@ -16,7 +16,7 @@ router.post("/list", async (req, res) => {
     }
 
     const list = await Transaction.find({ userId })
-      .sort({ date: -1 })
+      .sort({ createdAt: -1 })
       .limit(100);
 
     res.json({
