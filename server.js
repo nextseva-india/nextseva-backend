@@ -20,6 +20,7 @@ app.use("/api", require("./routes/profileRoutes"));
 app.use("/api", require("./routes/serviceRoutes"));
 app.use("/api/wallet", require("./routes/walletRoutes"));
 app.use("/api/transaction", require("./routes/transactionRoutes"));
+app.use("/api/export", require("./routes/exportRoutes"));
 
 // 🔥 Test route
 app.get("/", (req, res) => {

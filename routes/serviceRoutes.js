@@ -45,7 +45,8 @@ router.post("/recharge", async (req, res) => {
   txnId,
   type,
   amount,
-  status: "debit",
+  status: "success",
+  flow: "debit",
   balance: user.wallet,
   mobile,
   operator

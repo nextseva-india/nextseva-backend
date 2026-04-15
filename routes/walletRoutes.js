@@ -39,7 +39,8 @@ const tx = await Transaction.create({
   txnId,                             // ✅ এখানে বসাও
   type: "Wallet Add",
   amount: amt,
-  status: "credit",
+  status: "success",
+  flow: "credit",
   balance: user.wallet
 });
 
@@ -94,7 +95,8 @@ router.post("/deduct", async (req, res) => {
       txnId,
       type: "Wallet Withdraw",
       amount: amt,
-      status: "debit",
+      status: "success",
+      flow: "debit",
       balance: updated.wallet
     });
 
