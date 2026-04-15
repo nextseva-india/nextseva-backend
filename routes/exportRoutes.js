@@ -92,52 +92,69 @@ router.post("/pdf", async (req, res) => {
 
     doc.pipe(res);
 
-    // 🔥 Title
+    // 🔥 Title (smaller + clean)
     doc
-      .fontSize(16)
+      .fontSize(13)
       .text("NextSeva Transaction Report", { align: "center" });
 
-    doc.moveDown(2);
+    doc.moveDown(1);
 
-    // 🔥 Table Header
-    doc.fontSize(10).font("Helvetica-Bold");
+    // 🔥 Header
+    doc.fontSize(9).font("Helvetica-Bold");
 
-    let startY = doc.y;
+    const headerY = doc.y;
 
-    doc.text("Date", 30, startY);
-    doc.text("TXN ID", 120, startY);
-    doc.text("Type", 240, startY);
-    doc.text("Status", 340, startY);
-    doc.text("Amount", 400, startY);
-    doc.text("Balance", 470, startY);
+    doc.text("Date", 30, headerY);
+    doc.text("TXN ID", 130, headerY);
+    doc.text("Type", 270, headerY);
+    doc.text("Status", 360, headerY);
+    doc.text("Amount", 420, headerY);
+    doc.text("Balance", 480, headerY);
 
-    doc.moveDown();
-
-    doc.font("Helvetica");
+    doc.moveDown(0.5);
 
     // 🔥 Rows
+    doc.fontSize(8).font("Helvetica");
+
     list.forEach(tx => {
 
+      // 👉 single line date
       const date = tx.createdAt
-        ? new Date(tx.createdAt).toLocaleString("en-IN")
+        ? new Date(tx.createdAt).toLocaleString("en-IN").replace(",", "")
         : "N/A";
 
       const status = tx.status === "failed" ? "Failed" : "Success";
 
       const y = doc.y;
 
-      doc.text(date, 30, y, { width: 80 });
-      doc.text(tx.txnId, 120, y, { width: 110 });
-      doc.text(tx.type, 240, y, { width: 90 });
-      doc.text(status, 340, y, { width: 60 });
-      doc.text(String(tx.amount), 400, y, { width: 50 });
-      doc.text(String(tx.balance), 470, y, { width: 50 });
+      doc.text(date, 30, y, { width: 95 });
+      doc.text(tx.txnId, 130, y, { width: 130 });
+      doc.text(tx.type, 270, y, { width: 85 });
+      doc.text(status, 360, y, { width: 55 });
+      doc.text(String(tx.amount), 420, y, { width: 50 });
+      doc.text(String(tx.balance), 480, y, { width: 50 });
 
-      doc.moveDown();
+      doc.moveDown(0.5);
 
-      // 🔥 page break safety
+      // 🔥 page break
       if (doc.y > 750) {
         doc.addPage();
+
+        // 👉 header repeat after page break
+        doc.fontSize(9).font("Helvetica-Bold");
+
+        const newY = doc.y;
+
+        doc.text("Date", 30, newY);
+        doc.text("TXN ID", 130, newY);
+        doc.text("Type", 270, newY);
+        doc.text("Status", 360, newY);
+        doc.text("Amount", 420, newY);
+        doc.text("Balance", 480, newY);
+
+        doc.moveDown(0.5);
+
+        doc.fontSize(8).font("Helvetica");
       }
     });
 
