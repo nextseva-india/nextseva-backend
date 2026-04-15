@@ -93,19 +93,27 @@ router.post("/pdf", async (req, res) => {
     doc.pipe(res);
 
     // 🔥 Title
-    doc.fontSize(16).text("NextSeva Transaction Report", { align: "center" });
-    doc.moveDown();
+    doc
+      .fontSize(16)
+      .text("NextSeva Transaction Report", { align: "center" });
+
+    doc.moveDown(2);
 
     // 🔥 Table Header
-    doc.fontSize(10);
-    doc.text("Date", 30, doc.y);
-    doc.text("TXN ID", 110, doc.y);
-    doc.text("Type", 220, doc.y);
-    doc.text("Status", 320, doc.y);
-    doc.text("Amount", 380, doc.y);
-    doc.text("Balance", 450, doc.y);
+    doc.fontSize(10).font("Helvetica-Bold");
+
+    let startY = doc.y;
+
+    doc.text("Date", 30, startY);
+    doc.text("TXN ID", 120, startY);
+    doc.text("Type", 240, startY);
+    doc.text("Status", 340, startY);
+    doc.text("Amount", 400, startY);
+    doc.text("Balance", 470, startY);
 
     doc.moveDown();
+
+    doc.font("Helvetica");
 
     // 🔥 Rows
     list.forEach(tx => {
@@ -116,22 +124,27 @@ router.post("/pdf", async (req, res) => {
 
       const status = tx.status === "failed" ? "Failed" : "Success";
 
-      doc.text(date, 30, doc.y);
-      doc.text(tx.txnId, 110, doc.y);
-      doc.text(tx.type, 220, doc.y);
-      doc.text(status, 320, doc.y);
-      doc.text(String(tx.amount), 380, doc.y);
-      doc.text(String(tx.balance), 450, doc.y);
+      const y = doc.y;
+
+      doc.text(date, 30, y, { width: 80 });
+      doc.text(tx.txnId, 120, y, { width: 110 });
+      doc.text(tx.type, 240, y, { width: 90 });
+      doc.text(status, 340, y, { width: 60 });
+      doc.text(String(tx.amount), 400, y, { width: 50 });
+      doc.text(String(tx.balance), 470, y, { width: 50 });
 
       doc.moveDown();
+
+      // 🔥 page break safety
+      if (doc.y > 750) {
+        doc.addPage();
+      }
     });
 
     doc.end();
 
   } catch (err) {
     console.error("PDF ERROR:", err);
-
-    // ❗ এখানে JSON না
     res.status(500).send("PDF Error");
   }
 });
