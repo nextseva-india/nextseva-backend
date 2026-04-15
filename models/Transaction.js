@@ -39,14 +39,9 @@ const transactionSchema = new mongoose.Schema({
 
   mobile: String,
   operator: String,
-  
-remark: {
-  type: String,
-  default: ""
-}
 
-}, 
-{
+
+}, {
   timestamps: true
 });
 
