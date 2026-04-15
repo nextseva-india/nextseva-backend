@@ -72,18 +72,18 @@ router.post("/pdf", async (req, res) => {
     const { userId } = req.body;
 
     if (!userId) {
-      return res.json({ status: "fail", message: "User ID required" });
+      return res.status(400).send("User ID required");
     }
 
     const list = await Transaction.find({ userId }).sort({ createdAt: -1 });
 
     if (!list.length) {
-      return res.json({ status: "fail", message: "No data" });
+      return res.status(400).send("No data");
     }
 
     const doc = new PDFDocument({ margin: 30, size: "A4" });
 
-    // 🔥 headers
+    // ✅ headers
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -120,8 +120,8 @@ router.post("/pdf", async (req, res) => {
       doc.text(tx.txnId, 110, doc.y);
       doc.text(tx.type, 220, doc.y);
       doc.text(status, 320, doc.y);
-      doc.text(tx.amount.toString(), 380, doc.y);
-      doc.text(tx.balance.toString(), 450, doc.y);
+      doc.text(String(tx.amount), 380, doc.y);
+      doc.text(String(tx.balance), 450, doc.y);
 
       doc.moveDown();
     });
@@ -130,6 +130,8 @@ router.post("/pdf", async (req, res) => {
 
   } catch (err) {
     console.error("PDF ERROR:", err);
-    res.json({ status: "fail" });
+
+    // ❗ এখানে JSON না
+    res.status(500).send("PDF Error");
   }
 });
