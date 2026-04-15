@@ -62,7 +62,6 @@ router.post("/excel", async (req, res) => {
 module.exports = router;
 
 
-
 const PDFDocument = require("pdfkit");
 
 // 📄 EXPORT PDF
@@ -92,33 +91,33 @@ router.post("/pdf", async (req, res) => {
 
     doc.pipe(res);
 
-    // 🔥 Title (smaller + clean)
+    // 🔥 TITLE (compact)
     doc
-      .fontSize(13)
+      .fontSize(12)
       .text("NextSeva Transaction Report", { align: "center" });
 
     doc.moveDown(1);
 
-    // 🔥 Header
-    doc.fontSize(9).font("Helvetica-Bold");
+    // 🔥 HEADER
+    doc.fontSize(8).font("Helvetica-Bold");
 
     const headerY = doc.y;
 
     doc.text("Date", 30, headerY);
-    doc.text("TXN ID", 130, headerY);
-    doc.text("Type", 270, headerY);
-    doc.text("Status", 360, headerY);
-    doc.text("Amount", 420, headerY);
+    doc.text("TXN ID", 140, headerY);
+    doc.text("Type", 280, headerY);
+    doc.text("Status", 370, headerY);
+    doc.text("Amount", 430, headerY);
     doc.text("Balance", 480, headerY);
 
-    doc.moveDown(0.5);
+    doc.moveDown(0.6);
 
-    // 🔥 Rows
-    doc.fontSize(8).font("Helvetica");
+    // 🔥 ROWS
+    doc.fontSize(7).font("Helvetica");
 
     list.forEach(tx => {
 
-      // 👉 single line date
+      // 👉 single line clean date
       const date = tx.createdAt
         ? new Date(tx.createdAt).toLocaleString("en-IN").replace(",", "")
         : "N/A";
@@ -127,34 +126,57 @@ router.post("/pdf", async (req, res) => {
 
       const y = doc.y;
 
-      doc.text(date, 30, y, { width: 95 });
-      doc.text(tx.txnId, 130, y, { width: 130 });
-      doc.text(tx.type, 270, y, { width: 85 });
-      doc.text(status, 360, y, { width: 55 });
-      doc.text(String(tx.amount), 420, y, { width: 50 });
-      doc.text(String(tx.balance), 480, y, { width: 50 });
+      // ❗ NO WRAP ANYWHERE
+      doc.text(date, 30, y, {
+        width: 105,
+        lineBreak: false
+      });
 
-      doc.moveDown(0.5);
+      doc.text(tx.txnId, 140, y, {
+        width: 130,
+        lineBreak: false
+      });
 
-      // 🔥 page break
+      doc.text(tx.type, 280, y, {
+        width: 85,
+        lineBreak: false
+      });
+
+      doc.text(status, 370, y, {
+        width: 50,
+        lineBreak: false
+      });
+
+      doc.text(String(tx.amount), 430, y, {
+        width: 40,
+        lineBreak: false
+      });
+
+      doc.text(String(tx.balance), 480, y, {
+        width: 40,
+        lineBreak: false
+      });
+
+      doc.moveDown(0.6);
+
+      // 🔥 PAGE BREAK + HEADER REPEAT
       if (doc.y > 750) {
         doc.addPage();
 
-        // 👉 header repeat after page break
-        doc.fontSize(9).font("Helvetica-Bold");
+        doc.fontSize(8).font("Helvetica-Bold");
 
         const newY = doc.y;
 
         doc.text("Date", 30, newY);
-        doc.text("TXN ID", 130, newY);
-        doc.text("Type", 270, newY);
-        doc.text("Status", 360, newY);
-        doc.text("Amount", 420, newY);
+        doc.text("TXN ID", 140, newY);
+        doc.text("Type", 280, newY);
+        doc.text("Status", 370, newY);
+        doc.text("Amount", 430, newY);
         doc.text("Balance", 480, newY);
 
-        doc.moveDown(0.5);
+        doc.moveDown(0.6);
 
-        doc.fontSize(8).font("Helvetica");
+        doc.fontSize(7).font("Helvetica");
       }
     });
 
