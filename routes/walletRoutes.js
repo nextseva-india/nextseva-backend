@@ -41,7 +41,8 @@ const tx = await Transaction.create({
   amount: amt,
   status: "success",
   flow: "credit",
-  balance: user.wallet
+  balance: user.wallet,
+  remark: "Amount added successfully"
 });
 
 console.log("✅ TX SAVED:", tx);
@@ -97,7 +98,8 @@ router.post("/deduct", async (req, res) => {
       amount: amt,
       status: "success",
       flow: "debit",
-      balance: updated.wallet
+      balance: updated.wallet,
+      remark: "Amount Withdrawal successfully"
     });
 
     res.json({
