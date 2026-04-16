@@ -21,6 +21,7 @@ router.get("/services", async (req, res) => {
 // RECHARGE
 router.post("/recharge", async (req, res) => {
   try {
+
     const { userId, mobile, operator } = req.body;
     const type = req.body.type || "Mobile Recharge";
     const amount = Number(req.body.amount);
@@ -29,6 +30,7 @@ router.post("/recharge", async (req, res) => {
       return res.json({ success: false, message: "Invalid amount" });
     }
 
+    // 🔥 FIND USER
     const user = await User.findById(userId);
 
     if (!user) {
@@ -39,11 +41,10 @@ router.post("/recharge", async (req, res) => {
       return res.json({ success: false, message: "Insufficient balance" });
     }
 
-    // ✅ wallet deduct
-    user.wallet -= amount;
-    await user.save();
+    // 🔥 CALCULATE NEW BALANCE
+    const newBalance = user.wallet - amount;
 
-    // ✅ transaction save
+    // 🔥 CREATE TRANSACTION FIRST
     const txnId = generateTxnId("RC");
 
     await Transaction.create({
@@ -53,11 +54,15 @@ router.post("/recharge", async (req, res) => {
       amount,
       status: "success",
       flow: "debit",
-      balance: user.wallet,
+      balance: newBalance,
       mobile,
       operator,
       remark: "Recharge successful"
     });
+
+    // 🔥 UPDATE WALLET AFTER
+    user.wallet = newBalance;
+    await user.save();
 
     return res.json({
       success: true,
@@ -66,8 +71,8 @@ router.post("/recharge", async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
-    res.json({ success: false, message: "Server error" });
+    console.error("RECHARGE ERROR:", err);
+    res.json({ success: false, message: err.message });
   }
 });
 

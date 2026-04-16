@@ -18,32 +18,33 @@ router.post("/add", async (req, res) => {
       return res.json({ status: "fail", message: "Invalid data" });
     }
 
-    // 🔥 UPDATE WALLET
-    const user = await User.findOneAndUpdate(
-      { mobile },
-      { $inc: { wallet: amt } },
-      { new: true }
-    );
+    // 🔥 FIND USER FIRST
+    const user = await User.findOne({ mobile });
 
     if (!user) {
       return res.json({ status: "fail", message: "User not found" });
     }
 
-    // 🔥 SAVE TRANSACTION
+    // 🔥 CALCULATE NEW BALANCE
+    const newBalance = user.wallet + amt;
+
+    // 🔥 CREATE TRANSACTION FIRST (prepare data)
     const txnId = generateTxnId("CR");
 
-    const tx = await Transaction.create({
+    await Transaction.create({
       userId: user._id,
       txnId,
       type: "Wallet Add",
       amount: amt,
       status: "success",
       flow: "credit",
-      balance: user.wallet,
+      balance: newBalance,
       remark: "Amount added successfully"
     });
 
-    console.log("TX SAVED:", tx);
+    // 🔥 UPDATE WALLET AFTER
+    user.wallet = newBalance;
+    await user.save();
 
     res.json({
       status: "success",
@@ -52,7 +53,7 @@ router.post("/add", async (req, res) => {
 
   } catch (err) {
     console.error("WALLET ADD ERROR:", err);
-    res.json({ status: "fail" });
+    res.json({ status: "fail", message: err.message });
   }
 });
 
@@ -77,35 +78,35 @@ router.post("/deduct", async (req, res) => {
       return res.json({ status: "fail", message: "Low balance" });
     }
 
-    // 🔥 UPDATE WALLET
-    const updated = await User.findOneAndUpdate(
-      { mobile },
-      { $inc: { wallet: -amt } },
-      { new: true }
-    );
+    // 🔥 CALCULATE NEW BALANCE
+    const newBalance = user.wallet - amt;
 
-    // 🔥 SAVE TRANSACTION
+    // 🔥 CREATE TRANSACTION FIRST
     const txnId = generateTxnId("DR");
 
     await Transaction.create({
-      userId: updated._id,
+      userId: user._id,
       txnId,
       type: "Wallet Withdraw",
       amount: amt,
       status: "success",
       flow: "debit",
-      balance: updated.wallet,
+      balance: newBalance,
       remark: "Amount Withdrawal successfully"
     });
 
+    // 🔥 UPDATE WALLET AFTER
+    user.wallet = newBalance;
+    await user.save();
+
     res.json({
       status: "success",
-      wallet: updated.wallet
+      wallet: user.wallet
     });
 
   } catch (err) {
     console.error("WALLET DEDUCT ERROR:", err);
-    res.json({ status: "fail" });
+    res.json({ status: "fail", message: err.message });
   }
 });
 
