@@ -12,34 +12,58 @@ const transactionSchema = new mongoose.Schema({
   txnId: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    index: true
   },
 
   type: {
     type: String,
     required: true
-    // example: "Mobile Recharge", "DTH Recharge", "Wallet Add"
+    // example: "Mobile Recharge", "Wallet Add"
   },
 
   amount: {
     type: Number,
-    required: true
+    required: true,
+    min: 1
   },
 
+  // ✅ status = success / failed
   status: {
     type: String,
-    enum: ["debit", "credit", "failed"],
-    required: true
+    enum: ["success", "failed"],
+    required: true,
+    index: true
+  },
+
+  // ✅ flow = credit / debit (NEW ADD - IMPORTANT)
+  flow: {
+    type: String,
+    enum: ["credit", "debit"],
+    required: true,
+    index: true
   },
 
   balance: {
     type: Number,
-    required: true
+    required: true,
+    min: 0
   },
 
-  mobile: String,
-  operator: String,
+  mobile: {
+    type: String,
+    default: ""
+  },
 
+  operator: {
+    type: String,
+    default: ""
+  },
+
+  remark: {
+    type: String,
+    default: ""
+  }
 
 }, {
   timestamps: true

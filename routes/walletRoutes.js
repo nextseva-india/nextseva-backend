@@ -3,16 +3,15 @@ const router = express.Router();
 
 const User = require("../models/User");
 const Transaction = require("../models/Transaction");
-
 const generateTxnId = require("../utils/generateTxnId");
 
 
 // 💰 ADD MONEY
 router.post("/add", async (req, res) => {
   try {
-     console.log("🔥 ADD ROUTE HIT");   // ✅ ADD THIS
-    const { mobile, amount } = req.body;
+    console.log("🔥 ADD ROUTE HIT");
 
+    const { mobile, amount } = req.body;
     const amt = Number(amount);
 
     if (!mobile || isNaN(amt) || amt <= 0) {
@@ -30,22 +29,21 @@ router.post("/add", async (req, res) => {
       return res.json({ status: "fail", message: "User not found" });
     }
 
-   // 🔥 SAVE TRANSACTION
+    // 🔥 SAVE TRANSACTION
+    const txnId = generateTxnId("CR");
 
-const txnId = generateTxnId("CR");   // ✅ আগে generate
+    const tx = await Transaction.create({
+      userId: user._id,
+      txnId,
+      type: "Wallet Add",
+      amount: amt,
+      status: "success",
+      flow: "credit",
+      balance: user.wallet,
+      remark: "Amount added successfully"
+    });
 
-const tx = await Transaction.create({
-  userId: user._id,
-  txnId,                             // ✅ এখানে বসাও
-  type: "Wallet Add",
-  amount: amt,
-  status: "success",
-  flow: "credit",
-  balance: user.wallet
-});
-
-console.log("✅ TX SAVED:", tx);
-  
+    console.log("TX SAVED:", tx);
 
     res.json({
       status: "success",
@@ -63,7 +61,6 @@ console.log("✅ TX SAVED:", tx);
 router.post("/deduct", async (req, res) => {
   try {
     const { mobile, amount } = req.body;
-
     const amt = Number(amount);
 
     if (!mobile || isNaN(amt) || amt <= 0) {
@@ -97,7 +94,8 @@ router.post("/deduct", async (req, res) => {
       amount: amt,
       status: "success",
       flow: "debit",
-      balance: updated.wallet
+      balance: updated.wallet,
+      remark: "Amount Withdrawal successfully"
     });
 
     res.json({
@@ -110,5 +108,6 @@ router.post("/deduct", async (req, res) => {
     res.json({ status: "fail" });
   }
 });
+
 
 module.exports = router;
