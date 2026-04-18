@@ -62,7 +62,7 @@ router.post("/recharge", async (req, res) => {
 let apiResponse;
 
 // ✅ force fail
-if(false){
+if(Math.random() < 0.8){
   apiResponse = { success: true };
 }else{
   apiResponse = { success: false };

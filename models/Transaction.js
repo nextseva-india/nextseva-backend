@@ -28,7 +28,7 @@ const transactionSchema = new mongoose.Schema({
     min: 1
   },
 
-  // ✅ status = success / failed
+  // ✅ // status = pending / success / failed
   status: {
     type: String,
     enum: ["pending", "success", "failed"],
