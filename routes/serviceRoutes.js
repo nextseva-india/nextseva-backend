@@ -41,34 +41,63 @@ router.post("/recharge", async (req, res) => {
       return res.json({ success: false, message: "Insufficient balance" });
     }
 
-    // 🔥 CALCULATE NEW BALANCE
-    const newBalance = user.wallet - amount;
 
     // 🔥 CREATE TRANSACTION FIRST
     const txnId = generateTxnId("RC");
 
-    await Transaction.create({
+    const txn = await Transaction.create({
+      
       userId,
       txnId,
       type,
       amount,
-      status: "success",
+      status: "pending",
       flow: "debit",
-      balance: newBalance,
+      balance: user.wallet,
       mobile,
       operator,
-      remark: "Recharge successful"
+      remark: "Processing"
     });
+    // 🔥 STEP 2: simulate API call
+let apiResponse;
 
-    // 🔥 UPDATE WALLET AFTER
-    user.wallet = newBalance;
-    await user.save();
+// ✅ force fail
+if(false){
+  apiResponse = { success: true };
+}else{
+  apiResponse = { success: false };
+}
 
-    return res.json({
-      success: true,
-      message: "Recharge successful",
-      balance: user.wallet
-    });
+console.log("API RESULT:", apiResponse);
+
+if(apiResponse.success){
+
+  // ✅ wallet deduct
+  user.wallet = user.wallet - amount;
+  await user.save();
+
+  // ✅ update txn
+  txn.status = "success";
+  txn.balance = user.wallet;
+  txn.remark = "Recharge successful";
+
+}else{
+
+  // ❌ failed txn
+  txn.status = "failed";
+  txn.remark = "Recharge failed";
+
+}
+
+await txn.save();
+
+
+   return res.json({
+  success: apiResponse.success,
+  message: apiResponse.success ? "Recharge successful" : "Recharge failed",
+  balance: user.wallet,
+  txnId: txn.txnId   // 🔥 IMPORTANT
+});
 
   } catch (err) {
     console.error("RECHARGE ERROR:", err);
