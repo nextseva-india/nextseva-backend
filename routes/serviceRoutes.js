@@ -106,4 +106,95 @@ await txn.save();
 });
 
 
+// 📡 DTH RECHARGE
+router.post("/dth", async (req, res) => {
+  try {
+
+    const { userId, customerId, operator } = req.body;
+    const type = "DTH Recharge";
+    const amount = Number(req.body.amount);
+
+    // ✅ validation
+    if (!customerId || customerId.length < 5) {
+      return res.json({ success: false, message: "Invalid Customer ID" });
+    }
+
+    if (!operator) {
+      return res.json({ success: false, message: "Select operator" });
+    }
+
+    if (!amount || amount <= 0) {
+      return res.json({ success: false, message: "Invalid amount" });
+    }
+
+    // 🔥 user check
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if (user.wallet < amount) {
+      return res.json({ success: false, message: "Insufficient balance" });
+    }
+
+    // 🔥 create txn (PENDING)
+    const txnId = generateTxnId("DTH");
+
+    const txn = await Transaction.create({
+      userId,
+      txnId,
+      type,
+      amount,
+      status: "pending",
+      flow: "debit",
+      balance: user.wallet,
+      operator,
+      remark: "Processing",
+      
+      // 🔥 NEW FIELD USE
+      mobile: "", // keep empty
+      customerId: customerId  // 🔥 ADD THIS FIELD (IMPORTANT)
+    });
+
+    // 🔥 fake API
+    let apiResponse;
+
+    if(Math.random() < 0.8){
+      apiResponse = { success: true };
+    }else{
+      apiResponse = { success: false };
+    }
+
+    // 🔥 result handle
+    if(apiResponse.success){
+
+      user.wallet -= amount;
+      await user.save();
+
+      txn.status = "success";
+      txn.balance = user.wallet;
+      txn.remark = "DTH Recharge successful";
+
+    } else {
+
+      txn.status = "failed";
+      txn.remark = "DTH Recharge failed";
+    }
+
+    await txn.save();
+
+    return res.json({
+      success: apiResponse.success,
+      message: apiResponse.success ? "DTH Recharge successful" : "DTH Recharge failed",
+      balance: user.wallet,
+      txnId: txn.txnId
+    });
+
+  } catch (err) {
+    console.error("DTH ERROR:", err);
+    res.json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
