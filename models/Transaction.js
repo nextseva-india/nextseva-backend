@@ -55,6 +55,11 @@ const transactionSchema = new mongoose.Schema({
     default: ""
   },
 
+  customerId: {
+  type: String,
+  default: ""
+  },
+
   operator: {
     type: String,
     default: ""
