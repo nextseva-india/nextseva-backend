@@ -3,78 +3,156 @@ const router = express.Router();
 
 const Transaction = require("../models/Transaction");
 const XLSX = require("xlsx");
+const PDFDocument = require("pdfkit");
 
-// 📊 EXPORT EXCEL
+
+// ================= FILTER BUILDER =================
+function buildFilter(body){
+
+  const {
+    userId,
+    txnId,
+    type,
+    status,
+    amount,
+    dateType,
+    fromDate,
+    toDate
+  } = body;
+
+  let query = { userId };
+
+  // TXN ID
+  if (txnId && txnId.trim() !== "") {
+    query.txnId = { $regex: txnId.trim(), $options: "i" };
+  }
+
+  // TYPE
+  if (type && type !== "") {
+    query.type = type;
+  }
+
+  // STATUS
+  if (status && status !== "") {
+    query.status = status.toLowerCase();
+  }
+
+  // AMOUNT
+  if (amount && !isNaN(amount)) {
+    query.amount = { $gte: Number(amount) };
+  }
+
+  // DATE FILTER
+  if (dateType === "today") {
+    const start = new Date();
+    start.setHours(0,0,0,0);
+
+    const end = new Date();
+    end.setHours(23,59,59,999);
+
+    query.createdAt = { $gte: start, $lte: end };
+  }
+
+  if (dateType === "yesterday") {
+    const start = new Date();
+    start.setDate(start.getDate() - 1);
+    start.setHours(0,0,0,0);
+
+    const end = new Date();
+    end.setDate(end.getDate() - 1);
+    end.setHours(23,59,59,999);
+
+    query.createdAt = { $gte: start, $lte: end };
+  }
+
+  if (dateType === "week") {
+    const past = new Date();
+    past.setDate(past.getDate() - 7);
+
+    query.createdAt = { $gte: past };
+  }
+
+  if (dateType === "custom" && fromDate && toDate) {
+    const start = new Date(fromDate);
+    const end = new Date(toDate);
+
+    start.setHours(0,0,0,0);
+    end.setHours(23,59,59,999);
+
+    query.createdAt = { $gte: start, $lte: end };
+  }
+
+  return query;
+}
+
+
+
+// ================= EXCEL EXPORT =================
 router.post("/excel", async (req, res) => {
   try {
 
-    const { userId } = req.body;
+    const query = buildFilter(req.body);
 
-    if (!userId) {
-      return res.json({ status: "fail", message: "User ID required" });
-    }
+    console.log("EXCEL QUERY:", query); // 🔥 debug
 
-    const list = await Transaction.find({ userId }).sort({ createdAt: -1 });
+    const list = await Transaction.find(query).sort({ createdAt: -1 });
 
     if (!list.length) {
-      return res.json({ status: "fail", message: "No data" });
+      return res.status(400).send("No data found");
     }
 
-    // 🔥 format data
-    const data = list.map(tx => ({
-      Date: new Date(tx.createdAt).toLocaleString("en-IN"),
-      TXN_ID: tx.txnId,
-      Type: tx.type,
+    const formatted = list.map(tx => ({
+      Date: tx.createdAt
+        ? new Date(tx.createdAt).toLocaleString("en-IN")
+        : "",
+      TXN_ID: tx.txnId || "",
+      Type: tx.type || "",
       Status: tx.status === "failed" ? "Failed" : "Success",
-      Amount: tx.amount,
-      Balance: tx.balance,
+      Amount: tx.amount || 0,
+      Balance: tx.balance || 0,
       Mobile: tx.mobile || "",
       Operator: tx.operator || "",
       Remark: tx.remark || ""
     }));
 
-    // 🔥 create excel
-    const ws = XLSX.utils.json_to_sheet(data);
+    const ws = XLSX.utils.json_to_sheet(formatted);
     const wb = XLSX.utils.book_new();
 
     XLSX.utils.book_append_sheet(wb, ws, "Transactions");
 
-    const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    const buffer = XLSX.write(wb, {
+      type: "buffer",
+      bookType: "xlsx"
+    });
 
-    // 🔥 response headers
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=NextSeva_Transactions.xlsx"
-    );
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=NextSeva_Transactions.xlsx"
+    );
 
-    res.send(buffer);
+    res.status(200).end(buffer);
 
   } catch (err) {
-    console.error("EXPORT ERROR:", err);
-    res.json({ status: "fail" });
+    console.error("EXCEL ERROR:", err);
+    res.status(500).send("Excel Export Failed");
   }
 });
 
-module.exports = router;
 
 
-const PDFDocument = require("pdfkit");
-
-// 📄 EXPORT PDF
+// ================= PDF EXPORT =================
 router.post("/pdf", async (req, res) => {
   try {
 
-    const { userId } = req.body;
+    const query = buildFilter(req.body);
 
-    if (!userId) {
-      return res.status(400).send("User ID required");
-    }
+    console.log("PDF QUERY:", query); // 🔥 debug
 
-    const list = await Transaction.find({ userId }).sort({ createdAt: -1 });
+    const list = await Transaction.find(query).sort({ createdAt: -1 });
 
     if (!list.length) {
       return res.status(400).send("No data");
@@ -82,100 +160,67 @@ router.post("/pdf", async (req, res) => {
 
     const doc = new PDFDocument({ margin: 30, size: "A4" });
 
-    // ✅ headers
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=NextSeva_Transactions.pdf"
-    );
+    const chunks = [];
 
-    doc.pipe(res);
+    doc.on("data", chunk => chunks.push(chunk));
 
-    // 🔥 TITLE (compact)
-    doc
-      .fontSize(12)
-      .text("NextSeva Transaction Report", { align: "center" });
+    doc.on("end", () => {
+      const result = Buffer.concat(chunks);
 
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=NextSeva_Transactions.pdf"
+      );
+
+      res.status(200).end(result);
+    });
+
+    // ===== CONTENT =====
+
+    doc.fontSize(12).text("NextSeva Transaction Report", { align: "center" });
     doc.moveDown(1);
 
-    // 🔥 HEADER
     doc.fontSize(8).font("Helvetica-Bold");
 
-    const headerY = doc.y;
+    const drawHeader = () => {
+      const y = doc.y;
+      doc.text("Date", 30, y);
+      doc.text("TXN ID", 140, y);
+      doc.text("Type", 280, y);
+      doc.text("Status", 370, y);
+      doc.text("Amount", 430, y);
+      doc.text("Balance", 480, y);
+      doc.moveDown(0.6);
+    };
 
-    doc.text("Date", 30, headerY);
-    doc.text("TXN ID", 140, headerY);
-    doc.text("Type", 280, headerY);
-    doc.text("Status", 370, headerY);
-    doc.text("Amount", 430, headerY);
-    doc.text("Balance", 480, headerY);
+    drawHeader();
 
-    doc.moveDown(0.6);
-
-    // 🔥 ROWS
     doc.fontSize(7).font("Helvetica");
 
     list.forEach(tx => {
 
-      // 👉 single line clean date
       const date = tx.createdAt
         ? new Date(tx.createdAt).toLocaleString("en-IN").replace(",", "")
         : "N/A";
 
-      const status = tx.status === "failed" ? "Failed" : "Success";
+      const statusText = tx.status === "failed" ? "Failed" : "Success";
 
       const y = doc.y;
 
-      // ❗ NO WRAP ANYWHERE
-      doc.text(date, 30, y, {
-        width: 105,
-        lineBreak: false
-      });
-
-      doc.text(tx.txnId, 140, y, {
-        width: 130,
-        lineBreak: false
-      });
-
-      doc.text(tx.type, 280, y, {
-        width: 85,
-        lineBreak: false
-      });
-
-      doc.text(status, 370, y, {
-        width: 50,
-        lineBreak: false
-      });
-
-      doc.text(String(tx.amount), 430, y, {
-        width: 40,
-        lineBreak: false
-      });
-
-      doc.text(String(tx.balance), 480, y, {
-        width: 40,
-        lineBreak: false
-      });
+      doc.text(date, 30, y, { width: 105, lineBreak: false });
+      doc.text(tx.txnId, 140, y, { width: 130, lineBreak: false });
+      doc.text(tx.type, 280, y, { width: 85, lineBreak: false });
+      doc.text(statusText, 370, y, { width: 50, lineBreak: false });
+      doc.text(String(tx.amount), 430, y, { width: 40, lineBreak: false });
+      doc.text(String(tx.balance), 480, y, { width: 40, lineBreak: false });
 
       doc.moveDown(0.6);
 
-      // 🔥 PAGE BREAK + HEADER REPEAT
       if (doc.y > 750) {
         doc.addPage();
-
         doc.fontSize(8).font("Helvetica-Bold");
-
-        const newY = doc.y;
-
-        doc.text("Date", 30, newY);
-        doc.text("TXN ID", 140, newY);
-        doc.text("Type", 280, newY);
-        doc.text("Status", 370, newY);
-        doc.text("Amount", 430, newY);
-        doc.text("Balance", 480, newY);
-
-        doc.moveDown(0.6);
-
+        drawHeader();
         doc.fontSize(7).font("Helvetica");
       }
     });
@@ -187,3 +232,6 @@ router.post("/pdf", async (req, res) => {
     res.status(500).send("PDF Error");
   }
 });
+
+
+module.exports = router;
