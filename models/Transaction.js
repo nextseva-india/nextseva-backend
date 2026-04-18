@@ -31,7 +31,7 @@ const transactionSchema = new mongoose.Schema({
   // ✅ status = success / failed
   status: {
     type: String,
-    enum: ["success", "failed"],
+    enum: ["pending", "success", "failed"],
     required: true,
     index: true
   },
