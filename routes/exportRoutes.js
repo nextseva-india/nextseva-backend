@@ -20,6 +20,10 @@ function buildFilter(body){
     toDate
   } = body;
 
+  // 🔥 normalize (MOST IMPORTANT)
+  const dt = (dateType || "").toLowerCase();
+  const st = (status || "").toLowerCase();
+
   let query = { userId };
 
   // TXN ID
@@ -33,8 +37,8 @@ function buildFilter(body){
   }
 
   // STATUS
-  if (status && status !== "") {
-    query.status = status.toLowerCase();
+  if (st && st !== "all") {
+    query.status = st;
   }
 
   // AMOUNT
@@ -43,7 +47,8 @@ function buildFilter(body){
   }
 
   // DATE FILTER
-  if (dateType === "today") {
+
+  if (dt === "today") {
     const start = new Date();
     start.setHours(0,0,0,0);
 
@@ -53,7 +58,7 @@ function buildFilter(body){
     query.createdAt = { $gte: start, $lte: end };
   }
 
-  if (dateType === "yesterday") {
+  if (dt === "yesterday") {
     const start = new Date();
     start.setDate(start.getDate() - 1);
     start.setHours(0,0,0,0);
@@ -65,14 +70,14 @@ function buildFilter(body){
     query.createdAt = { $gte: start, $lte: end };
   }
 
-  if (dateType === "week") {
+  if (dt === "week") {
     const past = new Date();
     past.setDate(past.getDate() - 7);
 
     query.createdAt = { $gte: past };
   }
 
-  if (dateType === "custom" && fromDate && toDate) {
+  if (dt === "custom" && fromDate && toDate) {
     const start = new Date(fromDate);
     const end = new Date(toDate);
 
@@ -92,8 +97,7 @@ router.post("/excel", async (req, res) => {
   try {
 
     const query = buildFilter(req.body);
-
-    console.log("EXCEL QUERY:", query); // 🔥 debug
+    console.log("EXCEL QUERY:", query); // debug
 
     const list = await Transaction.find(query).sort({ createdAt: -1 });
 
@@ -117,7 +121,6 @@ router.post("/excel", async (req, res) => {
 
     const ws = XLSX.utils.json_to_sheet(formatted);
     const wb = XLSX.utils.book_new();
-
     XLSX.utils.book_append_sheet(wb, ws, "Transactions");
 
     const buffer = XLSX.write(wb, {
@@ -149,8 +152,7 @@ router.post("/pdf", async (req, res) => {
   try {
 
     const query = buildFilter(req.body);
-
-    console.log("PDF QUERY:", query); // 🔥 debug
+    console.log("PDF QUERY:", query); // debug
 
     const list = await Transaction.find(query).sort({ createdAt: -1 });
 
