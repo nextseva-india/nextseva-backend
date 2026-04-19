@@ -555,7 +555,7 @@ router.post("/lic/pay", async (req, res) => {
       return res.json({ success: false, message: "Insufficient balance" });
     }
 
-    const txnId = generateTxnId("LIC");
+    const txnId = generateTxnId("LI");
 
     const txn = await Transaction.create({
       userId,
