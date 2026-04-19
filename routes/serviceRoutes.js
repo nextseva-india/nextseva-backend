@@ -201,7 +201,7 @@ router.post("/dth", async (req, res) => {
 
 // ELECTRIC BILL
 
-router.post("/electric/fetch", async (req, res) => {
+router.post("/electricity/fetch", async (req, res) => {
   try {
 
     const { consumerNo, board } = req.body;
@@ -230,7 +230,7 @@ router.post("/electric/fetch", async (req, res) => {
 });
 
 
-router.post("/electric/pay", async (req, res) => {
+router.post("/electricity/pay", async (req, res) => {
   try {
 
     const { userId, amount, consumerNo, board } = req.body;
@@ -251,7 +251,7 @@ router.post("/electric/pay", async (req, res) => {
    const txn = await Transaction.create({
   userId,
   txnId,
-  type: "Electric Bill",
+  type: "Electricity Bill",
   amount,
   status: "pending",
   flow: "debit",
