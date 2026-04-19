@@ -511,4 +511,102 @@ router.post("/creditcard/pay", async (req, res) => {
   }
 });
 
+// ======================= LIC PREMIUM =======================
+router.post("/lic/fetch", async (req, res) => {
+  try {
+
+    const { policyNumber } = req.body;
+
+    // ✅ validation
+    if(!policyNumber || policyNumber.length < 6){
+      return res.json({ success: false, message: "Invalid policy number" });
+    }
+
+    // 🔥 FAKE DATA (API replaceable)
+    const bill = {
+      policyNumber,
+      customerName: "Demo User",
+      premiumAmount: Math.floor(Math.random() * 3000) + 500,
+      dueDate: "10-04-2026"
+    };
+
+    return res.json({
+      success: true,
+      bill
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+router.post("/lic/pay", async (req, res) => {
+  try {
+
+    const { userId, policyNumber, amount } = req.body;
+
+    const user = await User.findById(userId);
+
+    if(!user){
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if(user.wallet < amount){
+      return res.json({ success: false, message: "Insufficient balance" });
+    }
+
+    const txnId = generateTxnId("LIC");
+
+    const txn = await Transaction.create({
+      userId,
+      txnId,
+      type: "LIC Premium",
+      amount,
+      status: "pending",
+      flow: "debit",
+      balance: user.wallet,
+      remark: "LIC Processing",
+
+      details: {
+        policyNumber
+      }
+    });
+
+    // 🔥 simulate API
+    let apiResponse;
+
+    if(Math.random() < 0.9){
+      apiResponse = { success: true };
+    }else{
+      apiResponse = { success: false };
+    }
+
+    if(apiResponse.success){
+
+      user.wallet -= amount;
+      await user.save();
+
+      txn.status = "success";
+      txn.balance = user.wallet;
+      txn.remark = "LIC Paid";
+
+    } else {
+
+      txn.status = "failed";
+      txn.remark = "LIC Failed";
+    }
+
+    await txn.save();
+
+    return res.json({
+      success: apiResponse.success,
+      txnId,
+      balance: user.wallet
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
