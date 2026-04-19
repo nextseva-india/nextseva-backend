@@ -19,7 +19,7 @@ const transactionSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true
-    // "Mobile Recharge", "DTH Recharge", "Electric Bill"
+    // "Mobile Recharge", "DTH Recharge", "Electricity Bill"
   },
 
   amount: {
