@@ -302,7 +302,7 @@ router.post("/electricity/pay", async (req, res) => {
   }
 });
 
-// ======================= ELECTRIC BILL =======================
+// ======================= POSTPAID BILL =======================
 router.post("/postpaid/fetch", async (req, res) => {
   try {
 
@@ -392,6 +392,110 @@ router.post("/postpaid/pay", async (req, res) => {
 
       txn.status = "failed";
       txn.remark = "Postpaid Failed";
+    }
+
+    await txn.save();
+
+    return res.json({
+      success: apiResponse.success,
+      txnId,
+      balance: user.wallet
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+// ======================= CREDITCARD BILL =======================
+router.post("/creditcard/fetch", async (req, res) => {
+  try {
+
+    const { cardNumber, bank } = req.body;
+
+    if(!cardNumber || cardNumber.length < 12){
+      return res.json({ success: false, message: "Invalid card number" });
+    }
+
+    if(!bank){
+      return res.json({ success: false, message: "Select bank" });
+    }
+
+    // 🔥 FAKE DATA (API replaceable)
+    const bill = {
+      cardNumber,
+      bank,
+      customerName: "Demo User",
+      totalDue: Math.floor(Math.random() * 5000) + 1000,
+      minDue: Math.floor(Math.random() * 500) + 100,
+      dueDate: "05-04-2026"
+    };
+
+    return res.json({
+      success: true,
+      bill
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+router.post("/creditcard/pay", async (req, res) => {
+  try {
+
+    const { userId, cardNumber, bank, amount } = req.body;
+
+    const user = await User.findById(userId);
+
+    if(!user){
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if(user.wallet < amount){
+      return res.json({ success: false, message: "Insufficient balance" });
+    }
+
+    const txnId = generateTxnId("CC");
+
+    const txn = await Transaction.create({
+      userId,
+      txnId,
+      type: "Credit Card Bill",
+      amount,
+      status: "pending",
+      flow: "debit",
+      balance: user.wallet,
+      remark: "Bill Processing",
+
+      details: {
+        cardNumber,
+        bank
+      }
+    });
+
+    // 🔥 simulate API
+    let apiResponse;
+
+    if(Math.random() < 0.9){
+      apiResponse = { success: true };
+    }else{
+      apiResponse = { success: false };
+    }
+
+    if(apiResponse.success){
+
+      user.wallet -= amount;
+      await user.save();
+
+      txn.status = "success";
+      txn.balance = user.wallet;
+      txn.remark = "Credit Card Paid";
+
+    } else {
+
+      txn.status = "failed";
+      txn.remark = "Payment Failed";
     }
 
     await txn.save();
