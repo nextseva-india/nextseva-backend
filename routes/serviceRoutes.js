@@ -711,4 +711,107 @@ router.post("/lpg/book", async (req, res) => {
   }
 });
 
+// ======================= LOAN REPAYMENT =======================
+router.post("/loan/fetch", async (req, res) => {
+  try {
+
+    const { loanAccount, bank } = req.body;
+
+    if(!loanAccount || loanAccount.length < 6){
+      return res.json({ success: false, message: "Invalid loan account number" });
+    }
+
+    if(!bank){
+      return res.json({ success: false, message: "Select bank" });
+    }
+
+    // 🔥 FAKE DATA (API replaceable)
+    const data = {
+      loanAccount,
+      bank,
+      customerName: "Demo User",
+      dueAmount: Math.floor(Math.random()*5000) + 1000,
+      emiAmount: Math.floor(Math.random()*2000) + 500,
+      dueDate: "15-04-2026"
+    };
+
+    return res.json({
+      success: true,
+      data
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+router.post("/loan/pay", async (req, res) => {
+  try {
+
+    const { userId, loanAccount, bank, amount } = req.body;
+
+    const user = await User.findById(userId);
+
+    if(!user){
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if(user.wallet < amount){
+      return res.json({ success: false, message: "Insufficient balance" });
+    }
+
+    const txnId = generateTxnId("LOAN");
+
+    const txn = await Transaction.create({
+      userId,
+      txnId,
+      type: "Loan Repayment",
+      amount,
+      status: "pending",
+      flow: "debit",
+      balance: user.wallet,
+      remark: "Loan Processing",
+
+      consumerNo: loanAccount,
+      operator: bank
+    });
+
+    // 🔥 simulate API
+    let apiResponse;
+
+    if(Math.random() < 0.9){
+      apiResponse = { success: true };
+    }else{
+      apiResponse = { success: false };
+    }
+
+    if(apiResponse.success){
+
+      user.wallet -= amount;
+      await user.save();
+
+      txn.status = "success";
+      txn.balance = user.wallet;
+      txn.remark = "Loan Paid";
+
+    }else{
+
+      txn.status = "failed";
+      txn.remark = "Loan Failed";
+    }
+
+    await txn.save();
+
+    return res.json({
+      success: apiResponse.success,
+      txnId,
+      balance: user.wallet
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+
 module.exports = router;
