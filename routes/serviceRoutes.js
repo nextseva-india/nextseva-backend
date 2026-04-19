@@ -609,4 +609,106 @@ router.post("/lic/pay", async (req, res) => {
   }
 });
 
+// ======================= LPG BOOKING =======================
+router.post("/lpg/fetch", async (req, res) => {
+  try {
+
+    const { consumerNo, distributor } = req.body;
+
+    if(!consumerNo || consumerNo.length < 5){
+      return res.json({ success: false, message: "Invalid consumer number" });
+    }
+
+    if(!distributor){
+      return res.json({ success: false, message: "Select distributor" });
+    }
+
+    // 🔥 FAKE DATA (API replaceable)
+    const data = {
+      consumerNo,
+      distributor,
+      customerName: "Demo User",
+      cylinderPrice: Math.floor(Math.random()*500) + 900,
+      subsidy: Math.floor(Math.random()*200),
+      bookingDate: new Date().toLocaleDateString("en-IN")
+    };
+
+    return res.json({
+      success: true,
+      data
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+router.post("/lpg/book", async (req, res) => {
+  try {
+
+    const { userId, consumerNo, distributor, amount } = req.body;
+
+    const user = await User.findById(userId);
+
+    if(!user){
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if(user.wallet < amount){
+      return res.json({ success: false, message: "Insufficient balance" });
+    }
+
+    const txnId = generateTxnId("LP");
+
+    const txn = await Transaction.create({
+      userId,
+      txnId,
+      type: "LPG Booking",
+      amount,
+      status: "pending",
+      flow: "debit",
+      balance: user.wallet,
+      remark: "LPG Booking Processing",
+
+      consumerNo,
+      operator: distributor
+    });
+
+    // 🔥 simulate API
+    let apiResponse;
+
+    if(Math.random() < 0.9){
+      apiResponse = { success: true };
+    }else{
+      apiResponse = { success: false };
+    }
+
+    if(apiResponse.success){
+
+      user.wallet -= amount;
+      await user.save();
+
+      txn.status = "success";
+      txn.balance = user.wallet;
+      txn.remark = "LPG Booked";
+
+    }else{
+
+      txn.status = "failed";
+      txn.remark = "Booking Failed";
+    }
+
+    await txn.save();
+
+    return res.json({
+      success: apiResponse.success,
+      txnId,
+      balance: user.wallet
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
