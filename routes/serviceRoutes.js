@@ -245,7 +245,7 @@ router.post("/electricity/pay", async (req, res) => {
       return res.json({ success: false, message: "Insufficient balance" });
     }
 
-    const txnId = generateTxnId("ELEC");
+    const txnId = generateTxnId("EL");
 
     // 🔥 create pending txn
    const txn = await Transaction.create({
@@ -287,6 +287,111 @@ router.post("/electricity/pay", async (req, res) => {
       txn.status = "failed";
       txn.remark = "Bill Failed";
 
+    }
+
+    await txn.save();
+
+    return res.json({
+      success: apiResponse.success,
+      txnId,
+      balance: user.wallet
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+// ======================= ELECTRIC BILL =======================
+router.post("/postpaid/fetch", async (req, res) => {
+  try {
+
+    const { mobile, operator } = req.body;
+
+    // ✅ validation
+    if(!/^[6-9]\d{9}$/.test(mobile)){
+      return res.json({ success: false, message: "Invalid mobile number" });
+    }
+
+    if(!operator){
+      return res.json({ success: false, message: "Select operator" });
+    }
+
+    // 🔥 FAKE BILL DATA (API replaceable)
+    const bill = {
+      customerName: "Demo User",
+      mobile,
+      operator,
+      amount: Math.floor(Math.random() * 500) + 100,
+      dueDate: "30-03-2026"
+    };
+
+    return res.json({
+      success: true,
+      bill
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+router.post("/postpaid/pay", async (req, res) => {
+  try {
+
+    const { userId, mobile, operator, amount } = req.body;
+
+    const user = await User.findById(userId);
+
+    if(!user){
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if(user.wallet < amount){
+      return res.json({ success: false, message: "Insufficient balance" });
+    }
+
+    const txnId = generateTxnId("POST");
+
+    // 🔥 create txn (PENDING)
+    const txn = await Transaction.create({
+      userId,
+      txnId,
+      type: "Postpaid Bill",
+      amount,
+      status: "pending",
+      flow: "debit",
+      balance: user.wallet,
+      remark: "Bill Processing",
+
+      details: {
+        mobile,
+        operator
+      }
+    });
+
+    // 🔥 simulate API
+    let apiResponse;
+
+    if(Math.random() < 0.9){
+      apiResponse = { success: true };
+    }else{
+      apiResponse = { success: false };
+    }
+
+    if(apiResponse.success){
+
+      user.wallet -= amount;
+      await user.save();
+
+      txn.status = "success";
+      txn.balance = user.wallet;
+      txn.remark = "Postpaid Paid";
+
+    }else{
+
+      txn.status = "failed";
+      txn.remark = "Postpaid Failed";
     }
 
     await txn.save();
