@@ -19,7 +19,7 @@ const transactionSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true
-    // example: "Mobile Recharge", "Wallet Add"
+    // "Mobile Recharge", "DTH Recharge", "Electric Bill"
   },
 
   amount: {
@@ -28,7 +28,7 @@ const transactionSchema = new mongoose.Schema({
     min: 1
   },
 
-  // ✅ // status = pending / success / failed
+  // ✅ status = pending / success / failed
   status: {
     type: String,
     enum: ["pending", "success", "failed"],
@@ -36,7 +36,7 @@ const transactionSchema = new mongoose.Schema({
     index: true
   },
 
-  // ✅ flow = credit / debit (NEW ADD - IMPORTANT)
+  // ✅ credit / debit
   flow: {
     type: String,
     enum: ["credit", "debit"],
@@ -50,19 +50,28 @@ const transactionSchema = new mongoose.Schema({
     min: 0
   },
 
-  mobile: {
-    type: String,
-    default: ""
-  },
-
-  customerId: {
-  type: String,
-  default: ""
-  },
-
-  operator: {
-    type: String,
-    default: ""
+  // 🔥 ALL SERVICE DATA HERE (FUTURE PROOF)
+  details: {
+    mobile: {
+      type: String,
+      default: ""
+    },
+    customerId: {
+      type: String,
+      default: ""
+    },
+    consumerNo: {
+      type: String,
+      default: ""
+    },
+    operator: {
+      type: String,
+      default: ""
+    },
+    board: {
+      type: String,
+      default: ""
+    }
   },
 
   remark: {

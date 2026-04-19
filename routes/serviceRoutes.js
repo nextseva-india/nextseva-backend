@@ -45,19 +45,21 @@ router.post("/recharge", async (req, res) => {
     // 🔥 CREATE TRANSACTION FIRST
     const txnId = generateTxnId("RC");
 
-    const txn = await Transaction.create({
-      
-      userId,
-      txnId,
-      type,
-      amount,
-      status: "pending",
-      flow: "debit",
-      balance: user.wallet,
-      mobile,
-      operator,
-      remark: "Processing"
-    });
+   const txn = await Transaction.create({
+  userId,
+  txnId,
+  type,
+  amount,
+  status: "pending",
+  flow: "debit",
+  balance: user.wallet,
+  remark: "Processing",
+
+  details: {
+    mobile,
+    operator
+  }
+});
     // 🔥 STEP 2: simulate API call
 let apiResponse;
 
@@ -142,20 +144,20 @@ router.post("/dth", async (req, res) => {
     const txnId = generateTxnId("DTH");
 
     const txn = await Transaction.create({
-      userId,
-      txnId,
-      type,
-      amount,
-      status: "pending",
-      flow: "debit",
-      balance: user.wallet,
-      operator,
-      remark: "Processing",
-      
-      // 🔥 NEW FIELD USE
-      mobile: "", // keep empty
-      customerId: customerId  // 🔥 ADD THIS FIELD (IMPORTANT)
-    });
+  userId,
+  txnId,
+  type,
+  amount,
+  status: "pending",
+  flow: "debit",
+  balance: user.wallet,
+  remark: "Processing",
+
+  details: {
+    customerId,
+    operator
+  }
+});
 
     // 🔥 fake API
     let apiResponse;
@@ -193,6 +195,109 @@ router.post("/dth", async (req, res) => {
 
   } catch (err) {
     console.error("DTH ERROR:", err);
+    res.json({ success: false, message: err.message });
+  }
+});
+
+// ELECTRIC BILL
+
+router.post("/electric/fetch", async (req, res) => {
+  try {
+
+    const { consumerNo, board } = req.body;
+
+    if(!consumerNo || !board){
+      return res.json({ success: false, message: "Invalid details" });
+    }
+
+    // 🔥 FAKE BILL DATA (API replaceable)
+    const bill = {
+      customerName: "Demo User",
+      consumerNo,
+      board,
+      amount: Math.floor(Math.random() * 500) + 100,
+      dueDate: "28-03-2026"
+    };
+
+    return res.json({
+      success: true,
+      bill
+    });
+
+  } catch (err) {
+    res.json({ success: false, message: err.message });
+  }
+});
+
+
+router.post("/electric/pay", async (req, res) => {
+  try {
+
+    const { userId, amount, consumerNo, board } = req.body;
+
+    const user = await User.findById(userId);
+
+    if(!user){
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    if(user.wallet < amount){
+      return res.json({ success: false, message: "Insufficient balance" });
+    }
+
+    const txnId = generateTxnId("ELEC");
+
+    // 🔥 create pending txn
+   const txn = await Transaction.create({
+  userId,
+  txnId,
+  type: "Electric Bill",
+  amount,
+  status: "pending",
+  flow: "debit",
+  balance: user.wallet,
+  remark: "Bill Processing",
+
+  details: {
+    consumerNo,
+    board
+  }
+});
+
+    // 🔥 simulate API
+    let apiResponse;
+
+    if(Math.random() < 0.9){
+      apiResponse = { success: true };
+    }else{
+      apiResponse = { success: false };
+    }
+
+    if(apiResponse.success){
+
+      user.wallet -= amount;
+      await user.save();
+
+      txn.status = "success";
+      txn.balance = user.wallet;
+      txn.remark = "Bill Paid";
+
+    }else{
+
+      txn.status = "failed";
+      txn.remark = "Bill Failed";
+
+    }
+
+    await txn.save();
+
+    return res.json({
+      success: apiResponse.success,
+      txnId,
+      balance: user.wallet
+    });
+
+  } catch (err) {
     res.json({ success: false, message: err.message });
   }
 });
