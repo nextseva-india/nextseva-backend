@@ -351,7 +351,7 @@ router.post("/postpaid/pay", async (req, res) => {
       return res.json({ success: false, message: "Insufficient balance" });
     }
 
-    const txnId = generateTxnId("POST");
+    const txnId = generateTxnId("PP");
 
     // 🔥 create txn (PENDING)
     const txn = await Transaction.create({
