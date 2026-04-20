@@ -6,7 +6,9 @@ const User = require("../../models/User");
 // 👨‍💼 GET ALL RETAILERS
 router.get("/users", async (req, res) => {
   try {
-    const users = await User.find({ role: "retailer" });
+    const users = await User.find({
+  role: { $ne: "admin" }
+});
 
     res.json({
       success: true,
