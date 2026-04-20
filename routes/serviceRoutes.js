@@ -760,7 +760,7 @@ router.post("/loan/pay", async (req, res) => {
       return res.json({ success: false, message: "Insufficient balance" });
     }
 
-    const txnId = generateTxnId("LOAN");
+    const txnId = generateTxnId("LR");
 
     const txn = await Transaction.create({
       userId,

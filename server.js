@@ -33,3 +33,9 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
+//================================= FOR ADMIN PANEL ===============================================
+const adminAuthRoutes = require("./routes/admin/adminAuthRoutes");
+
+app.use("/api/admin", adminAuthRoutes);
