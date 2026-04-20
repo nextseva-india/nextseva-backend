@@ -38,6 +38,17 @@ const userSchema = new mongoose.Schema({
     required: true
   },
 
+  username: {
+  type: String,
+  unique: true,
+  sparse: true
+},
+
+role: {
+  type: String,
+  default: "retailer"
+},
+
   wallet: {
     type: Number,
     default: 0
