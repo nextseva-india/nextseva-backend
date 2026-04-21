@@ -62,4 +62,38 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// 📊 ADMIN DASHBOARD STATS
+router.get("/stats", async (req, res) => {
+  try {
+
+    const totalUsers = await User.countDocuments({ role: { $ne: "admin" } });
+
+    const activeUsers = await User.countDocuments({
+      role: { $ne: "admin" },
+      status: "active"
+    });
+
+    const blockedUsers = await User.countDocuments({
+      role: { $ne: "admin" },
+      status: "blocked"
+    });
+
+    res.json({
+      success: true,
+      stats: {
+        totalUsers,
+        activeUsers,
+        blockedUsers
+      }
+    });
+
+  } catch (err) {
+    console.error("Admin Stats Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+});
+
 module.exports = router;
