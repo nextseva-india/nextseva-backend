@@ -102,4 +102,37 @@ router.get("/stats", async (req, res) => {
   }
 });
 
+// 📊 TRANSACTION STATS
+const Transaction = require("../../models/Transaction");
+
+router.get("/transaction-stats", async (req, res) => {
+  try {
+
+    const total = await Transaction.countDocuments();
+
+    const success = await Transaction.countDocuments({ status: "success" });
+
+    const failed = await Transaction.countDocuments({ status: "failed" });
+
+    const pending = await Transaction.countDocuments({ status: "pending" });
+
+    res.json({
+      success: true,
+      stats: {
+        total,
+        success,
+        failed,
+        pending
+      }
+    });
+
+  } catch (err) {
+    console.error("Transaction Stats Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+});
+
 module.exports = router;
