@@ -39,21 +39,30 @@ const userSchema = new mongoose.Schema({
   },
 
   username: {
-  type: String,
-  unique: true,
-  sparse: true
-},
+    type: String,
+    unique: true,
+    sparse: true
+  },
 
-role: {
-  type: String,
-  default: "retailer"
-},
+  role: {
+    type: String,
+    default: "retailer"
+  },
+
+  // 🔥 ADMIN CONTROL FIELD
+  status: {
+    type: String,
+    enum: ["active", "blocked"],
+    default: "active",
+    index: true
+  },
 
   wallet: {
     type: Number,
     default: 0
   },
 
+  // 🔐 PROFILE / KYC STATUS
   profileComplete: {
     type: Boolean,
     default: false
@@ -70,31 +79,6 @@ role: {
         type: Boolean,
         default: false
       }
-    }
-  ],
-
-  transactions: [
-    {
-      id: {
-        type: String,
-        required: true
-      },
-
-      date: {
-        type: Date,
-        default: Date.now
-      },
-
-      type: {
-  type: String,
-  enum: ["Wallet Add", "Wallet Withdraw", "Mobile Recharge", "DTH Recharge", "LIC Premium"],
-  required: true
-},
-
-      status: String,
-
-      amount: Number,
-      balance: Number
     }
   ]
 
