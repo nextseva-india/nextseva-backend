@@ -54,7 +54,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["active", "blocked"],
     default: "active",
-    index: true
   },
 
   wallet: {
