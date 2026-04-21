@@ -40,6 +40,12 @@ const adminAuthRoutes = require("./routes/admin/adminAuthRoutes");
 
 app.use("/api/admin", adminAuthRoutes);
 
+
 const adminUserRoutes = require("./routes/admin/adminUserRoutes");
 
 app.use("/api/admin", adminUserRoutes);
+
+
+const adminExportRoutes = require("./routes/admin/adminExportRoutes");
+
+app.use("/api/admin/export", adminExportRoutes);
