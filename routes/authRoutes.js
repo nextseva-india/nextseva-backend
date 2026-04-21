@@ -116,18 +116,28 @@ const user = await User.findOne({
   password: password
 });
 
-  if (user) {
-    res.json({
-      status: "success",
-      message: "Login successful",
-      user: user
-    });
-  } else {
-    res.json({
+ if (user) {
+
+  // 🔥 BLOCK CHECK
+  if (user.status === "blocked") {
+    return res.json({
       status: "error",
-      message: "Invalid credentials"
+      message: "Your account is blocked. Contact admin."
     });
   }
+
+  res.json({
+    status: "success",
+    message: "Login successful",
+    user: user
+  });
+
+} else {
+  res.json({
+    status: "error",
+    message: "Invalid credentials"
+  });
+}
 });
 
 
