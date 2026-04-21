@@ -101,48 +101,34 @@ router.get("/stats", async (req, res) => {
     });
   }
 });
-
 // 📊 TRANSACTION STATS
 const Transaction = require("../../models/Transaction");
 
+// 📊 TRANSACTION STATS API
 router.get("/transaction-stats", async (req, res) => {
   try {
 
     const total = await Transaction.countDocuments();
-
     const success = await Transaction.countDocuments({ status: "success" });
-
     const failed = await Transaction.countDocuments({ status: "failed" });
-
     const pending = await Transaction.countDocuments({ status: "pending" });
 
     res.json({
       success: true,
-      stats: {
-        total,
-        success,
-        failed,
-        pending
-      }
+      stats: { total, success, failed, pending }
     });
 
   } catch (err) {
-    console.error("Transaction Stats Error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
+    res.status(500).json({ success: false });
   }
 });
 
-// 📋 ADMIN ALL TRANSACTIONS
-const Transaction = require("../../models/Transaction");
 
+// 📋 ADMIN ALL TRANSACTIONS (❌ require remove)
 router.get("/transactions", async (req, res) => {
   try {
 
-    const transactions = await Transaction.find()
-      .sort({ createdAt: -1 });
+    const transactions = await Transaction.find().sort({ createdAt: -1 });
 
     res.json({
       success: true,
@@ -150,11 +136,7 @@ router.get("/transactions", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Fetch Transactions Error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
+    res.status(500).json({ success: false });
   }
 });
 
