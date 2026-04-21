@@ -135,4 +135,27 @@ router.get("/transaction-stats", async (req, res) => {
   }
 });
 
+// 📋 ADMIN ALL TRANSACTIONS
+const Transaction = require("../../models/Transaction");
+
+router.get("/transactions", async (req, res) => {
+  try {
+
+    const transactions = await Transaction.find()
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      transactions
+    });
+
+  } catch (err) {
+    console.error("Fetch Transactions Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+});
+
 module.exports = router;
