@@ -78,6 +78,11 @@ router.get("/stats", async (req, res) => {
       status: "blocked"
     });
 
+    const incompleteUsers = await User.countDocuments({
+  role: { $ne: "admin" },
+  profileComplete: false
+});
+
     res.json({
       success: true,
       stats: {
