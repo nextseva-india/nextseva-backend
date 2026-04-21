@@ -88,7 +88,8 @@ router.get("/stats", async (req, res) => {
       stats: {
         totalUsers,
         activeUsers,
-        blockedUsers
+        blockedUsers,
+        incompleteUsers
       }
     });
 
