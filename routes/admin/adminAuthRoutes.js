@@ -128,7 +128,9 @@ router.get("/transaction-stats", async (req, res) => {
 router.get("/transactions", async (req, res) => {
   try {
 
-    const transactions = await Transaction.find().sort({ createdAt: -1 });
+    const transactions = await Transaction.find()
+  .populate("userId", "retailerId name shop mobile")
+  .sort({ createdAt: -1 });
 
     res.json({
       success: true,
