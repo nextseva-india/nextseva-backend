@@ -11,7 +11,13 @@ const serviceSchema = new mongoose.Schema({
     enum: ["main", "sub", "item"]
   },
   page_key: String,
-  icon: String
+  icon: String,
+
+   isActive: {
+    type: Boolean,
+    default: true
+  }
+  
 });
 
 module.exports = mongoose.model("Service", serviceSchema);

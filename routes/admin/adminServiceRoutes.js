@@ -23,4 +23,42 @@ router.get("/services", async (req, res) => {
   }
 });
 
+// 🔥 TOGGLE SERVICE
+// 🔥 helper function (recursive)
+async function disableChildren(parentId) {
+
+  const children = await Service.find({ parent_id: parentId });
+
+  for (let child of children) {
+
+    await Service.findByIdAndUpdate(child._id, { isActive: false });
+
+    // 🔁 recursive call
+    await disableChildren(child._id);
+  }
+}
+
+
+// 🔥 TOGGLE SERVICE
+router.post("/toggle-service", async (req, res) => {
+  try {
+
+    const { serviceId, isActive } = req.body;
+
+    // update selected
+    await Service.findByIdAndUpdate(serviceId, { isActive });
+
+    // 🔥 if disable → all level disable
+    if (isActive === false) {
+      await disableChildren(serviceId);
+    }
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error("Toggle Error:", err);
+    res.json({ success: false });
+  }
+});
+
 module.exports = router;
