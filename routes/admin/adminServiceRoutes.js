@@ -61,4 +61,57 @@ router.post("/toggle-service", async (req, res) => {
   }
 });
 
+//====================== REATILER WISE SEVICE CINTROL =====================//
+const RetailerService = require("../../models/RetailerService");
+
+
+// 🔥 SAVE RETAILER SERVICE ACCESS
+router.post("/retailer-service", async (req, res) => {
+  try {
+
+    const { retailerId, serviceId, isActive } = req.body;
+
+    // check existing
+    let record = await RetailerService.findOne({ retailerId, serviceId });
+
+    if (record) {
+      // update
+      record.isActive = isActive;
+      await record.save();
+    } else {
+      // create new
+      await RetailerService.create({
+        retailerId,
+        serviceId,
+        isActive
+      });
+    }
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error("Retailer Service Error:", err);
+    res.json({ success: false });
+  }
+});
+
+// 🔥 GET RETAILER SERVICE ACCESS
+router.get("/retailer-service/:retailerId", async (req, res) => {
+  try {
+
+    const { retailerId } = req.params;
+
+    const data = await RetailerService.find({ retailerId });
+
+    res.json({
+      success: true,
+      data
+    });
+
+  } catch (err) {
+    console.error("Get Retailer Service Error:", err);
+    res.json({ success: false });
+  }
+});
+
 module.exports = router;
