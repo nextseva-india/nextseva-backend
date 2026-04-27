@@ -37,4 +37,26 @@ router.post("/notice", async (req, res) => {
   }
 });
 
+router.get("/notice/:retailerId", async (req, res) => {
+  try {
+
+    const { retailerId } = req.params;
+
+    const notices = await Notice.find({
+      isActive: true,
+      $or: [
+        { type: "global" },
+        { type: "retailer", retailerId },
+        { type: "service" }
+      ]
+    }).sort({ createdAt: -1 });
+
+    res.json({ success: true, notices });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
+});
+
 module.exports = router;
