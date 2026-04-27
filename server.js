@@ -47,3 +47,6 @@ app.use("/api/admin/export", adminExportRoutes);
 
 const adminServiceRoutes = require("./routes/admin/adminServiceRoutes");
 app.use("/api/admin", adminServiceRoutes);
+
+const adminNoticeRoutes = require("./routes/admin/adminNoticeRoutes");
+app.use("/api/admin", adminNoticeRoutes);
