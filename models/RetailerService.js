@@ -16,3 +16,5 @@ const retailerServiceSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model("RetailerService", retailerServiceSchema);
+
+//Joydev//
