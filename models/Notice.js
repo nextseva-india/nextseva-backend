@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const noticeSchema = new mongoose.Schema({
 
@@ -13,7 +13,6 @@ const noticeSchema = new mongoose.Schema({
     required: true
   },
 
-  // 🔥 optional fields
   serviceId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Service",
@@ -33,4 +32,4 @@ const noticeSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-export default mongoose.model("Notice", noticeSchema);
+module.exports = mongoose.model("Notice", noticeSchema);
